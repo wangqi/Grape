@@ -16,3 +16,4 @@ DerivedData/
 Package.resolved
 
 /.index-build
+build/

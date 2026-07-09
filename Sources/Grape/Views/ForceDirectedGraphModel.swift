@@ -443,6 +443,12 @@ extension ForceDirectedGraphModel {
 
         self.finalTransform = transform
 
+        // scale contents with zoom // wangqi modified 2026-07-09
+        // Opt-in zoom scaling of node symbols + annotations. When the flag is off, s == 1.0 and
+        // every multiply below is a no-op (byte-identical to the pre-patch render). Positions in
+        // `viewportPositions` are already transformed, so only sizes/offsets are scaled here.
+        let s = stateMixinRef.scaleContentsWithZoom ? transform.scale : 1.0
+
         for op in graphRenderingContext.linkOperations {
 
             guard let source = simulationContext.nodeIndexLookup[op.mark.id.source],
@@ -507,14 +513,17 @@ extension ForceDirectedGraphModel {
 
             graphicsContext.transform = .init(translationX: pos.x, y: pos.y)
 
+            // scale contents with zoom // wangqi modified 2026-07-09
+            // Symbol paths are origin-centered (the context is translated to `pos`), so scaling
+            // by `s` keeps them centered. s == 1.0 when the flag is off (no-op).
             let finalizedPath: Path =
                 switch op.pathOrSymbolSize {
-                case .path(let path): path
+                case .path(let path): path.applying(CGAffineTransform(scaleX: s, y: s))
                 case .symbolSize(let size):
                     Path(
                         ellipseIn: CGRect(
-                            origin: CGPoint(x: -size.width / 2, y: -size.height / 2),
-                            size: size
+                            origin: CGPoint(x: -size.width * s / 2, y: -size.height * s / 2),
+                            size: CGSize(width: size.width * s, height: size.height * s)
                         )
                     )
                 }
@@ -583,19 +592,22 @@ extension ForceDirectedGraphModel {
                     if let textOffsetParams = graphRenderingContext.textOffsets[symbolID] {
                         let offset = textOffsetParams.offset
 
+                        // scale contents with zoom // wangqi modified 2026-07-09
+                        // Scale the rasterized annotation with zoom; textImageOffset and the label
+                        // offset use the scaled dims. s == 1.0 when the flag is off (no-op).
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)
 
                         let rect = CGRect(
-                            x: pos.x + offset.x + textImageOffset.x,  // - physicalWidth / 2,
-                            y: -pos.y - offset.y - textImageOffset.y,  // - physicalHeight
+                            x: pos.x + offset.x * s + textImageOffset.x,  // - physicalWidth / 2,
+                            y: -pos.y - offset.y * s - textImageOffset.y,  // - physicalHeight
                             width: physicalWidth,
                             height: physicalHeight
                         )
@@ -617,19 +629,23 @@ extension ForceDirectedGraphModel {
                     if let textOffsetParams = graphRenderingContext.textOffsets[symbolID] {
                         let offset = textOffsetParams.offset
 
+                        // scale contents with zoom // wangqi modified 2026-07-09
+                        // Scale the rasterized link annotation with zoom; s == 1.0 when off (no-op).
+                        // WikiGraph's LinkMarks carry no annotation, so this path is dormant for it;
+                        // scaling here keeps behavior uniform for any future link labels.
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)
 
                         let rect = CGRect(
-                            x: center.x + offset.x + textImageOffset.x,  // - physicalWidth / 2,
-                            y: -center.y - offset.y - textImageOffset.y,  // - physicalHeight
+                            x: center.x + offset.x * s + textImageOffset.x,  // - physicalWidth / 2,
+                            y: -center.y - offset.y * s - textImageOffset.y,  // - physicalHeight
                             width: physicalWidth,
                             height: physicalHeight
                         )
@@ -671,19 +687,22 @@ extension ForceDirectedGraphModel {
                     if let textOffsetParams = graphRenderingContext.textOffsets[symbolID] {
                         let offset = textOffsetParams.offset
 
+                        // scale contents with zoom // wangqi modified 2026-07-09
+                        // Scale the rasterized annotation with zoom; textImageOffset and the label
+                        // offset use the scaled dims. s == 1.0 when the flag is off (no-op).
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)
 
                         let rect = CGRect(
-                            x: pos.x + offset.x + textImageOffset.x,  // - physicalWidth / 2,
-                            y: -pos.y - offset.y - textImageOffset.y,  // - physicalHeight
+                            x: pos.x + offset.x * s + textImageOffset.x,  // - physicalWidth / 2,
+                            y: -pos.y - offset.y * s - textImageOffset.y,  // - physicalHeight
                             width: physicalWidth,
                             height: physicalHeight
                         )
@@ -706,19 +725,23 @@ extension ForceDirectedGraphModel {
                     if let textOffsetParams = graphRenderingContext.textOffsets[symbolID] {
                         let offset = textOffsetParams.offset
 
+                        // scale contents with zoom // wangqi modified 2026-07-09
+                        // Scale the rasterized link annotation with zoom; s == 1.0 when off (no-op).
+                        // WikiGraph's LinkMarks carry no annotation, so this path is dormant for it;
+                        // scaling here keeps behavior uniform for any future link labels.
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias
+                            / Self.textRasterizationAntialias * s
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)
 
                         let rect = CGRect(
-                            x: center.x + offset.x + textImageOffset.x,  // - physicalWidth / 2,
-                            y: -center.y - offset.y - textImageOffset.y,  // - physicalHeight
+                            x: center.x + offset.x * s + textImageOffset.x,  // - physicalWidth / 2,
+                            y: -center.y - offset.y * s - textImageOffset.y,  // - physicalHeight
                             width: physicalWidth,
                             height: physicalHeight
                         )

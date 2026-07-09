@@ -42,6 +42,13 @@ public class ForceDirectedGraphState: Observation.Observable {
     @usableFromInline
     internal var _$isRunning: Bool
 
+    // scale contents with zoom // wangqi modified 2026-07-09
+    // Opt-in: when true, the render loop multiplies node symbols and their annotations by the
+    // viewport zoom scale so labels shrink/grow with the layout (Knowledge Wiki graph). Defaults
+    // false so every other Grape graph (e.g. the Writer character web) is byte-identical. Read
+    // every frame in the render loop; a plain stored property (no observation registrar needed).
+    public var scaleContentsWithZoom: Bool = false
+
     @inlinable
     public var modelTransform: ViewportTransform {
         get {
