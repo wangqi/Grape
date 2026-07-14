@@ -61,10 +61,18 @@ extension _GraphRenderingContext.ViewResolvingState {
 }
 
 extension _GraphRenderingContext: Equatable {
+    // Also compare the annotation KEY sets (which nodes/links carry a label), not just
+    // node/link operations, so a label-set change that keeps the same nodes/edges is no
+    // longer considered equal. That lets a consumer drive a zoom-reactive label set through
+    // conditional `.annotation` attachment and have Grape revive (re-render labels) on it.
+    // Keys only (StateID is Hashable) — cheap; the resolved CGImages/texts are NOT compared.
+    // wangqi modified 2026-07-13
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.nodeOperations == rhs.nodeOperations
             && lhs.linkOperations == rhs.linkOperations
+            && Set(lhs.resolvedViews.keys) == Set(rhs.resolvedViews.keys)
+            && Set(lhs.resolvedTexts.keys) == Set(rhs.resolvedTexts.keys)
     }
 }
 

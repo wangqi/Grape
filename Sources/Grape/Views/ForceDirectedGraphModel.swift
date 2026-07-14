@@ -449,6 +449,12 @@ extension ForceDirectedGraphModel {
         // `viewportPositions` are already transformed, so only sizes/offsets are scaled here.
         let s = stateMixinRef.scaleContentsWithZoom ? transform.scale : 1.0
 
+        // cap annotation zoom scale // wangqi modified 2026-07-13
+        // Annotation (label) IMAGE dims use this capped scale so labels never grow past
+        // `maxAnnotationScale` on zoom-in (default .infinity → equals s, no change). Node symbols and
+        // the label OFFSET keep using the uncapped `s`, so a capped label still clears its node.
+        let annotationScale = min(s, stateMixinRef.maxAnnotationScale)
+
         for op in graphRenderingContext.linkOperations {
 
             guard let source = simulationContext.nodeIndexLookup[op.mark.id.source],
@@ -597,10 +603,10 @@ extension ForceDirectedGraphModel {
                         // offset use the scaled dims. s == 1.0 when the flag is off (no-op).
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)
@@ -635,10 +641,10 @@ extension ForceDirectedGraphModel {
                         // scaling here keeps behavior uniform for any future link labels.
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)
@@ -692,10 +698,10 @@ extension ForceDirectedGraphModel {
                         // offset use the scaled dims. s == 1.0 when the flag is off (no-op).
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)
@@ -731,10 +737,10 @@ extension ForceDirectedGraphModel {
                         // scaling here keeps behavior uniform for any future link labels.
                         let physicalWidth =
                             Double(rasterizedSymbol.width) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
                         let physicalHeight =
                             Double(rasterizedSymbol.height) / lastRasterizedScaleFactor
-                            / Self.textRasterizationAntialias * s
+                            / Self.textRasterizationAntialias * annotationScale
 
                         let textImageOffset = textOffsetParams.alignment.textImageOffsetInCGContext(
                             width: physicalWidth, height: physicalHeight)

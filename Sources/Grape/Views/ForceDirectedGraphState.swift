@@ -49,6 +49,15 @@ public class ForceDirectedGraphState: Observation.Observable {
     // every frame in the render loop; a plain stored property (no observation registrar needed).
     public var scaleContentsWithZoom: Bool = false
 
+    // cap annotation zoom scale // wangqi modified 2026-07-13
+    // Upper bound on the zoom multiplier applied to ANNOTATION (label) images only — node symbols
+    // still use the full zoom scale. Effective annotation scale is `min(transform.scale, this)` when
+    // `scaleContentsWithZoom` is on. Defaults `.infinity` (no cap → byte-identical for graphs that
+    // don't set it). The Knowledge Wiki graph sets 1.0 so labels shrink on zoom-out but never grow
+    // past their natural, crisp size on zoom-in (which also avoids upscaling blur). The label OFFSET
+    // still tracks the full zoom scale, so a capped label stays below its enlarged node symbol.
+    public var maxAnnotationScale: Double = .infinity
+
     @inlinable
     public var modelTransform: ViewportTransform {
         get {
