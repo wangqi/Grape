@@ -26,7 +26,10 @@ struct GraphDragModifier<NodeID: Hashable>: ViewModifier {
         content.gesture(dragGesture)
     }
 
-    @inlinable
+    // Xcode 27 / Swift 6.4 rejects @inlinable on a @State property: the macro-generated
+    // storage `_dragState` is private and so cannot be touched from an inlinable accessor.
+    // The enclosing struct is only @usableFromInline, so cross-module inlining buys nothing.
+    // wangqi modified 2026-09-15
     @State
     public var dragState: GraphDragState<NodeID>?
 
