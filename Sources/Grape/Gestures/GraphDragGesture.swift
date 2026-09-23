@@ -39,7 +39,11 @@ struct GraphDragModifier<NodeID: Hashable>: ViewModifier {
     @usableFromInline
     let action: ((GraphDragState<NodeID>?) -> Void)?
 
-    @inlinable
+    // Xcode 27 Release archive: an @inlinable init implicitly runs the @State macro's init
+    // accessor for dragState, which has non-public linkage ("function has wrong linkage to be
+    // called from init(graphProxy:action:)"). @usableFromInline keeps it callable from inlinable code.
+    // wangqi modified 2026-09-22
+    @usableFromInline
     init(
         graphProxy: GraphProxy,
         action: ((GraphDragState<NodeID>?) -> Void)? = nil
